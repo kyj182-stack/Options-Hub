@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>팀 업무 대시보드</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 16px;
+    height: calc(100vh - 100px);
+  }
+  .card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #334155;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 12px;
+  }
+  .name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .progress-bar {
+    width: 60px;
+    height: 6px;
+    background: #334155;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    transition: width 0.3s;
+  }
+  .progress-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #60a5fa;
+    min-width: 50px;
+    text-align: right;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 4px;
+    width: 58px;
+    font-family: inherit;
+    outline: none;
+  }
+  .progress-text:hover, .progress-text:focus {
+    border-color: #334155;
+    background: #0f172a;
+  }
+  .tasks {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-right: 4px;
+  }
+  .tasks::-webkit-scrollbar { width: 6px; }
+  .tasks::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #0f172a;
+    border-radius: 6px;
+    border: 1px solid #334155;
+  }
+  .task input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #3b82f6;
+  }
+  .task-text {
+    flex: 1;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    outline: none;
+  }
+  .task-text.done {
+    text-decoration: line-through;
+    color: #64748b;
+  }
+  .task .delete {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+  }
+  .task .delete:hover { color: #ef4444; }
+  .add-task {
+    display: flex;
+    gap: 6px;
+  }
+  .add-task input {
+    flex: 1;
+    padding: 8px 10px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 13px;
+    outline: none;
+  }
+  .add-task input:focus { border-color: #3b82f6; }
+  .add-task button {
+    padding: 8px 14px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .add-task button:hover { background: #2563eb; }
+
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
+    .card { min-height: 300px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>팀 업무 대시보드</h1>
+</header>
+<div class="grid" id="grid"></div>
+
+<script>
+  const MEMBERS = ["김억수", "최용호", "문창오", "홍승택", "성병준", "임주찬"];
+  const STORAGE_KEY = "team-dashboard-v1";
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    const initial = {};
+    MEMBERS.forEach(name => { initial[name] = []; });
+    return initial;
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  let state = loadState();
+
+  function render() {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    MEMBERS.forEach(name => {
+      const tasks = state[name] || [];
+      const done = tasks.filter(t => t.done).length;
+      const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="name">${name}</div>
+          <div class="progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <div class="progress-text">${pct}%</div>
+          </div>
+        </div>
+        <div class="tasks"></div>
+        <form class="add-task">
+          <input type="text" placeholder="새 태스크 추가" maxlength="100" />
+          <button type="submit">추가</button>
+        </form>
+      `;
+
+      const tasksEl = card.querySelector(".tasks");
+      tasks.forEach((task, idx) => {
+        const taskEl = document.createElement("div");
+        taskEl.className = "task";
+        taskEl.innerHTML = `
+          <input type="checkbox" ${task.done ? "checked" : ""} />
+          <input type="text" class="task-text ${task.done ? "done" : ""}" value="${escapeHtml(task.text)}" />
+          <button class="delete" title="삭제">×</button>
+        `;
+        const [checkbox, textInput, deleteBtn] = taskEl.children;
+        checkbox.addEventListener("change", () => {
+          state[name][idx].done = checkbox.checked;
+          saveState(state);
+          render();
+        });
+        textInput.addEventListener("change", () => {
+          state[name][idx].text = textInput.value;
+          saveState(state);
+        });
+        deleteBtn.addEventListener("click", () => {
+          state[name].splice(idx, 1);
+          saveState(state);
+          render();
+        });
+        tasksEl.appendChild(taskEl);
+      });
+
+      const form = card.querySelector(".add-task");
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const input = form.querySelector("input");
+        const text = input.value.trim();
+        if (!text) return;
+        state[name].push({ text, done: false });
+        saveState(state);
+        render();
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  render();
+</script>
+</body>
+</html>
