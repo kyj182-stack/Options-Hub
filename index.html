@@ -1,272 +1,1707 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>팀 업무 대시보드</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>XSP 12 전략 - 방어 로직 포함</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
-    min-height: 100vh;
-    padding: 20px;
-  }
-  header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  header h1 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #f1f5f9;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 16px;
-    height: calc(100vh - 100px);
-  }
-  .card {
-    background: #1e293b;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #334155;
-    overflow: hidden;
-  }
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #334155;
-    margin-bottom: 12px;
-  }
-  .name {
-    font-size: 18px;
-    font-weight: 600;
-    color: #f1f5f9;
-  }
-  .progress {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .progress-bar {
-    width: 60px;
-    height: 6px;
-    background: #334155;
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #06b6d4);
-    transition: width 0.3s;
-  }
-  .progress-text {
-    font-size: 14px;
-    font-weight: 600;
-    color: #60a5fa;
-    min-width: 50px;
-    text-align: right;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    padding: 2px 4px;
-    width: 58px;
-    font-family: inherit;
-    outline: none;
-  }
-  .progress-text:hover, .progress-text:focus {
-    border-color: #334155;
-    background: #0f172a;
-  }
-  .tasks {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
-    padding-right: 4px;
-  }
-  .tasks::-webkit-scrollbar { width: 6px; }
-  .tasks::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-  .task {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    background: #0f172a;
-    border-radius: 6px;
-    border: 1px solid #334155;
-  }
-  .task input[type="checkbox"] {
-    cursor: pointer;
-    accent-color: #3b82f6;
-  }
-  .task-text {
-    flex: 1;
-    font-size: 14px;
-    background: transparent;
-    border: none;
-    color: #e2e8f0;
-    outline: none;
-  }
-  .task-text.done {
-    text-decoration: line-through;
-    color: #64748b;
-  }
-  .task .delete {
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 0 4px;
-  }
-  .task .delete:hover { color: #ef4444; }
-  .add-task {
-    display: flex;
-    gap: 6px;
-  }
-  .add-task input {
-    flex: 1;
-    padding: 8px 10px;
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 6px;
-    color: #e2e8f0;
-    font-size: 13px;
-    outline: none;
-  }
-  .add-task input:focus { border-color: #3b82f6; }
-  .add-task button {
-    padding: 8px 14px;
-    background: #3b82f6;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .add-task button:hover { background: #2563eb; }
-
-  @media (max-width: 1100px) {
-    .grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
-  }
-  @media (max-width: 700px) {
-    .grid { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
-    .card { min-height: 300px; }
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #f4f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif; color: #111; }
+  .strategy-picker { position: sticky; top: 0; z-index: 100; background: #fff; border-bottom: 1px solid #ececec; padding: 12px 16px 10px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .strategy-picker::-webkit-scrollbar { display: none; }
+  .strategy-chip { display: inline-block; padding: 7px 13px; margin-right: 6px; font-size: 13px; font-weight: 500; color: #6a6a72; background: #f2f2f5; border-radius: 16px; cursor: pointer; transition: all 0.15s; }
+  .strategy-chip.active { background: #111; color: #fff; font-weight: 600; }
+  .screen { max-width: 420px; margin: 0 auto; background: #fff; min-height: 100vh; padding-bottom: 40px; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 8px; }
+  .header .left { display: flex; align-items: center; gap: 12px; }
+  .header .back { font-size: 22px; color: #111; font-weight: 300; }
+  .header .symbol { font-size: 16px; font-weight: 600; color: #111; }
+  .header .symbol-sub { font-size: 14px; color: #6a6a72; font-weight: 400; margin-left: 4px; }
+  .header .setting { font-size: 14px; color: #6a6a72; }
+  .title-block { padding: 12px 20px 4px; }
+  .title-row { display: flex; align-items: center; gap: 8px; }
+  .title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #111; }
+  .title-help { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; background: #e5e5ea; color: #8a8a90; font-size: 11px; align-items: center; justify-content: center; font-weight: 600; }
+  .title-desc { margin-top: 10px; font-size: 13px; color: #6a6a72; line-height: 1.55; }
+  .expiry-tabs { display: flex; gap: 24px; padding: 18px 20px 0; border-bottom: 1px solid #f0f0f2; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .expiry-tabs::-webkit-scrollbar { display: none; }
+  .expiry-tab { padding: 6px 0 12px; font-size: 15px; color: #b0b0b8; position: relative; font-weight: 500; flex-shrink: 0; }
+  .expiry-tab .date { color: #111; font-weight: 600; }
+  .expiry-tab.active .sub { color: #2979ff; font-weight: 600; }
+  .expiry-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #111; }
+  .expiry-tab .sub { margin-left: 4px; font-size: 13px; color: #b0b0b8; }
+  .col-header { display: flex; justify-content: space-between; padding: 20px 20px 10px; font-size: 12px; color: #b0b0b8; }
+  .chain { padding: 0; }
+  .row { padding: 14px 20px; border-bottom: 1px solid #f5f5f7; }
+  .row.profit { background: #fff4f2; }
+  .row.loss { background: #eef5ff; }
+  .row.neutral { background: #fff; }
+  .row.anomaly { background: #fff8e6; border-left: 3px solid #f5a623; }
+  .row-top { display: flex; justify-content: space-between; align-items: center; }
+  .strike { font-size: 15px; font-weight: 600; color: #111; letter-spacing: -0.3px; }
+  .strike-sub { font-size: 12px; color: #8a8a90; margin-top: 4px; font-weight: 400; }
+  .premium { background: #ff3d3d; color: #fff; padding: 7px 14px; border-radius: 20px; font-size: 14px; font-weight: 700; min-width: 80px; text-align: center; }
+  .premium.pay { background: #2979ff; }
+  .premium.anom { background: #b0b0b8; color: #fff; }
+  .bep-line { margin-top: 8px; font-size: 13.5px; color: #111; font-weight: 600; letter-spacing: -0.2px; }
+  .bep-line strong { font-weight: 800; }
+  .bep-line.anom-msg { color: #b8751b; font-weight: 600; font-size: 12.5px; }
+  .current-price { position: relative; margin: 8px 0; }
+  .current-price-bar { display: flex; justify-content: space-between; padding: 0 20px; font-size: 11px; color: #b0b0b8; margin-bottom: -12px; }
+  .current-price-bar .up { color: #ff3d3d; }
+  .current-price-bar .down { color: #2979ff; }
+  .current-price-pill { background: #fff; border: 1px solid #e5e5ea; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #111; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: absolute; left: 50%; transform: translateX(-50%); top: 0; white-space: nowrap; }
+  .divider-strip { height: 28px; position: relative; }
+  .strategy-view { display: none; }
+  .strategy-view.active { display: block; }
 </style>
 </head>
 <body>
-<header>
-  <h1>팀 업무 대시보드</h1>
-</header>
-<div class="grid" id="grid"></div>
+
+<div class="strategy-picker">
+  <div class="strategy-chip active" data-id="long-call">1. 롱 콜</div>
+  <div class="strategy-chip" data-id="long-put">2. 롱 풋</div>
+  <div class="strategy-chip" data-id="bull-call">3. 롱 콜 스프레드</div>
+  <div class="strategy-chip" data-id="bear-call">4. 숏 콜 스프레드</div>
+  <div class="strategy-chip" data-id="bear-put">5. 롱 풋 스프레드</div>
+  <div class="strategy-chip" data-id="bull-put">6. 숏 풋 스프레드</div>
+  <div class="strategy-chip" data-id="long-straddle">7. 롱 스트래들</div>
+  <div class="strategy-chip" data-id="long-strangle">8. 롱 스트랭글</div>
+  <div class="strategy-chip" data-id="short-iron-condor">9. 숏 아이언 콘도르</div>
+  <div class="strategy-chip" data-id="long-iron-condor">10. 롱 아이언 콘도르</div>
+  <div class="strategy-chip" data-id="short-iron-butterfly">11. 숏 아이언 버터플라이</div>
+  <div class="strategy-chip" data-id="long-iron-butterfly">12. 롱 아이언 버터플라이</div>
+</div>
+
+
+<div class="screen strategy-view active" data-view="long-call">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 콜</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703</div>
+          <div class="strike-sub">이론가격 $7.63  최저가 $5.29</div>
+        </div>
+        <div class="premium pay">$7.68</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.68</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704</div>
+          <div class="strike-sub">이론가격 $6.74  최저가 $4.40</div>
+        </div>
+        <div class="premium pay">$6.80</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.80</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705</div>
+          <div class="strike-sub">이론가격 $5.89  최저가 $2.97</div>
+        </div>
+        <div class="premium pay">$5.95</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.95</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706</div>
+          <div class="strike-sub">이론가격 $5.08  최저가 $2.87</div>
+        </div>
+        <div class="premium pay">$5.18</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$711.18</strong> 위면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707</div>
+          <div class="strike-sub">이론가격 $4.29  최저가 $2.26</div>
+        </div>
+        <div class="premium pay">$4.34</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$711.34</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708</div>
+          <div class="strike-sub">이론가격 $3.57  최저가 $1.81</div>
+        </div>
+        <div class="premium pay">$3.61</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$711.61</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709</div>
+          <div class="strike-sub">이론가격 $2.90  최저가 $1.45</div>
+        </div>
+        <div class="premium pay">$2.93</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$711.93</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710</div>
+          <div class="strike-sub">이론가격 $2.30  최저가 $0.91</div>
+        </div>
+        <div class="premium pay">$2.33</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$712.33</strong> 위면 수익</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="long-put">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 풋</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703</div>
+          <div class="strike-sub">이론가격 $0.51  최저가 $0.43</div>
+        </div>
+        <div class="premium pay">$0.55</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$702.45</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704</div>
+          <div class="strike-sub">이론가격 $0.62  최저가 $0.52</div>
+        </div>
+        <div class="premium pay">$0.66</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.34</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705</div>
+          <div class="strike-sub">이론가격 $0.77  최저가 $0.55</div>
+        </div>
+        <div class="premium pay">$0.81</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.19</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706</div>
+          <div class="strike-sub">이론가격 $0.96  최저가 $0.68</div>
+        </div>
+        <div class="premium pay">$1.00</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.00</strong> 아래면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707</div>
+          <div class="strike-sub">이론가격 $1.18  최저가 $0.78</div>
+        </div>
+        <div class="premium pay">$1.23</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.77</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708</div>
+          <div class="strike-sub">이론가격 $1.45  최저가 $0.90</div>
+        </div>
+        <div class="premium pay">$1.51</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.49</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709</div>
+          <div class="strike-sub">이론가격 $1.78  최저가 $1.12</div>
+        </div>
+        <div class="premium pay">$1.84</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.16</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710</div>
+          <div class="strike-sub">이론가격 $2.18  최저가 $1.31</div>
+        </div>
+        <div class="premium pay">$2.25</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.75</strong> 아래면 수익</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="bull-call">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 콜 스프레드</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (롱 콜 / 숏 콜)</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$699 / $700</div>
+          <div class="strike-sub">이론가격 $0.95  최저가 $0.80</div>
+        </div>
+        <div class="premium anom">$1.08</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704</div>
+          <div class="strike-sub">이론가격 $0.89  최저가 $0.89</div>
+        </div>
+        <div class="premium anom">$1.03</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705</div>
+          <div class="strike-sub">이론가격 $0.85  최저가 $1.43</div>
+        </div>
+        <div class="premium anom">$1.02</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706</div>
+          <div class="strike-sub">이론가격 $0.81  최저가 $0.10</div>
+        </div>
+        <div class="premium pay">$0.96</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.96</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707</div>
+          <div class="strike-sub">이론가격 $0.78  최저가 $0.61</div>
+        </div>
+        <div class="premium pay">$0.88</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.88</strong> 위면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708</div>
+          <div class="strike-sub">이론가격 $0.72  최저가 $0.45</div>
+        </div>
+        <div class="premium pay">$0.82</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.82</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709</div>
+          <div class="strike-sub">이론가격 $0.67  최저가 $0.36</div>
+        </div>
+        <div class="premium pay">$0.76</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$708.76</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710</div>
+          <div class="strike-sub">이론가격 $0.60  최저가 $0.54</div>
+        </div>
+        <div class="premium pay">$0.69</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$709.69</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711</div>
+          <div class="strike-sub">이론가격 $0.53  최저가 $0.03</div>
+        </div>
+        <div class="premium pay">$0.64</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.64</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$716 / $717</div>
+          <div class="strike-sub">이론가격 $0.04  최저가 $0.02</div>
+        </div>
+        <div class="premium pay">$0.05</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$716.05</strong> 위면 수익</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="bear-call">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">숏 콜 스프레드</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      지금 주가가 만기까지 유지된다면,<br>
+      빨간 영역은 수익, 파란 영역은 손실이 예상돼요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (숏 콜 / 롱 콜)</span>
+    <span>받을 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$699 / $700</div>
+          <div class="strike-sub">이론가격 $1.00  최저가 $0.95</div>
+        </div>
+        <div class="premium anom">$1.15</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704</div>
+          <div class="strike-sub">이론가격 $0.89  최저가 $0.89</div>
+        </div>
+        <div class="premium">$0.71</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.71</strong> 아래면 수익</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705</div>
+          <div class="strike-sub">이론가격 $0.85  최저가 $1.43</div>
+        </div>
+        <div class="premium">$0.69</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.69</strong> 아래면 수익</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706</div>
+          <div class="strike-sub">이론가격 $0.81  최저가 $0.10</div>
+        </div>
+        <div class="premium">$0.60</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.60</strong> 아래면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="current-price-bar"><span class="up">수익 예상 ↓</span><span class="down">손실 예상 ↑</span></div>
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40 (만기 손익분기)</div>
+      </div>
+    </div>
+
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707</div>
+          <div class="strike-sub">이론가격 $0.78  최저가 $0.61</div>
+        </div>
+        <div class="premium">$0.67</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.67</strong> 아래면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708</div>
+          <div class="strike-sub">이론가격 $0.72  최저가 $0.45</div>
+        </div>
+        <div class="premium">$0.62</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.62</strong> 아래면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709</div>
+          <div class="strike-sub">이론가격 $0.67  최저가 $0.36</div>
+        </div>
+        <div class="premium">$0.58</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$708.58</strong> 아래면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710</div>
+          <div class="strike-sub">이론가격 $0.60  최저가 $0.54</div>
+        </div>
+        <div class="premium">$0.51</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$709.51</strong> 아래면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711</div>
+          <div class="strike-sub">이론가격 $0.53  최저가 $0.03</div>
+        </div>
+        <div class="premium">$0.44</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.44</strong> 아래면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$716 / $717</div>
+          <div class="strike-sub">이론가격 $0.02  최저가 $0.01</div>
+        </div>
+        <div class="premium">$0.02</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$716.02</strong> 아래면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$717 / $718</div>
+          <div class="strike-sub">이론가격 $0.01  최저가 $0.00</div>
+        </div>
+        <div class="premium anom">-$0.05</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="bear-put">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 풋 스프레드</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (숏 풋 / 롱 풋)</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$699 / $700</div>
+          <div class="strike-sub">이론가격 $0.03  최저가 $0.01</div>
+        </div>
+        <div class="premium pay">$0.04</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$699.96</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704</div>
+          <div class="strike-sub">이론가격 $0.11  최저가 $0.09</div>
+        </div>
+        <div class="premium pay">$0.18</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.82</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705</div>
+          <div class="strike-sub">이론가격 $0.15  최저가 $0.03</div>
+        </div>
+        <div class="premium pay">$0.21</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.79</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706</div>
+          <div class="strike-sub">이론가격 $0.19  최저가 $0.13</div>
+        </div>
+        <div class="premium pay">$0.25</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.75</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707</div>
+          <div class="strike-sub">이론가격 $0.22  최저가 $0.10</div>
+        </div>
+        <div class="premium pay">$0.30</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.70</strong> 아래면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708</div>
+          <div class="strike-sub">이론가격 $0.28  최저가 $0.12</div>
+        </div>
+        <div class="premium pay">$0.36</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.64</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709</div>
+          <div class="strike-sub">이론가격 $0.33  최저가 $0.22</div>
+        </div>
+        <div class="premium pay">$0.43</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$708.57</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710</div>
+          <div class="strike-sub">이론가격 $0.40  최저가 $0.19</div>
+        </div>
+        <div class="premium pay">$0.49</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$709.51</strong> 아래면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711</div>
+          <div class="strike-sub">이론가격 $0.47  최저가 $0.23</div>
+        </div>
+        <div class="premium pay">$0.55</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.45</strong> 아래면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$716 / $717</div>
+          <div class="strike-sub">이론가격 $0.95  최저가 $0.80</div>
+        </div>
+        <div class="premium anom">$1.12</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="bull-put">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">숏 풋 스프레드</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      지금 주가가 만기까지 유지된다면,<br>
+      빨간 영역은 수익, 파란 영역은 손실이 예상돼요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (롱 풋 / 숏 풋)</span>
+    <span>받을 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$699 / $700</div>
+          <div class="strike-sub">이론가격 $0.90  최저가 $0.50</div>
+        </div>
+        <div class="premium anom">$1.05</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704</div>
+          <div class="strike-sub">이론가격 $0.11  최저가 $0.09</div>
+        </div>
+        <div class="premium">$0.05</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.95</strong> 위면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705</div>
+          <div class="strike-sub">이론가격 $0.15  최저가 $0.03</div>
+        </div>
+        <div class="premium">$0.09</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.91</strong> 위면 수익</div>
+    </div>
+    <div class="row profit">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706</div>
+          <div class="strike-sub">이론가격 $0.19  최저가 $0.13</div>
+        </div>
+        <div class="premium">$0.12</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.88</strong> 위면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="current-price-bar"><span class="down">손실 예상 ↓</span><span class="up">수익 예상 ↑</span></div>
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40 (만기 손익분기)</div>
+      </div>
+    </div>
+
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707</div>
+          <div class="strike-sub">이론가격 $0.22  최저가 $0.10</div>
+        </div>
+        <div class="premium">$0.14</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.86</strong> 위면 수익</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708</div>
+          <div class="strike-sub">이론가격 $0.28  최저가 $0.12</div>
+        </div>
+        <div class="premium">$0.18</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.82</strong> 위면 수익</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709</div>
+          <div class="strike-sub">이론가격 $0.33  최저가 $0.22</div>
+        </div>
+        <div class="premium">$0.22</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$708.78</strong> 위면 수익</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710</div>
+          <div class="strike-sub">이론가격 $0.40  최저가 $0.19</div>
+        </div>
+        <div class="premium">$0.31</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$709.69</strong> 위면 수익</div>
+    </div>
+    <div class="row loss">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711</div>
+          <div class="strike-sub">이론가격 $0.47  최저가 $0.23</div>
+        </div>
+        <div class="premium">$0.39</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.61</strong> 위면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$716 / $717</div>
+          <div class="strike-sub">이론가격 $0.01  최저가 $0.00</div>
+        </div>
+        <div class="premium anom">-$0.03</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="long-straddle">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 스트래들</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (롱 콜 / 롱 풋)</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $703</div>
+          <div class="strike-sub">이론가격 $8.14  최저가 $5.72</div>
+        </div>
+        <div class="premium pay">$8.23</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$694.77</strong> 아래 또는 <strong>$711.23</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $704</div>
+          <div class="strike-sub">이론가격 $7.36  최저가 $4.92</div>
+        </div>
+        <div class="premium pay">$7.46</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$696.54</strong> 아래 또는 <strong>$711.46</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $705</div>
+          <div class="strike-sub">이론가격 $6.66  최저가 $3.52</div>
+        </div>
+        <div class="premium pay">$6.76</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$698.24</strong> 아래 또는 <strong>$711.76</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $706</div>
+          <div class="strike-sub">이론가격 $6.04  최저가 $3.55</div>
+        </div>
+        <div class="premium pay">$6.18</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$699.82</strong> 아래 또는 <strong>$712.18</strong> 위면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $707</div>
+          <div class="strike-sub">이론가격 $5.47  최저가 $3.04</div>
+        </div>
+        <div class="premium pay">$5.57</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$701.43</strong> 아래 또는 <strong>$712.57</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $708</div>
+          <div class="strike-sub">이론가격 $5.02  최저가 $2.71</div>
+        </div>
+        <div class="premium pay">$5.12</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$702.88</strong> 아래 또는 <strong>$713.12</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $709</div>
+          <div class="strike-sub">이론가격 $4.68  최저가 $2.57</div>
+        </div>
+        <div class="premium pay">$4.77</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.23</strong> 아래 또는 <strong>$713.77</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $710</div>
+          <div class="strike-sub">이론가격 $4.48  최저가 $2.22</div>
+        </div>
+        <div class="premium pay">$4.57</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.43</strong> 아래 또는 <strong>$714.57</strong> 위면 수익</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="long-strangle">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 스트랭글</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (롱 풋 / 롱 콜)</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704</div>
+          <div class="strike-sub">이론가격 $7.25  최저가 $4.83</div>
+        </div>
+        <div class="premium pay">$7.35</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$695.65</strong> 아래 또는 <strong>$711.35</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705</div>
+          <div class="strike-sub">이론가격 $6.51  최저가 $3.49</div>
+        </div>
+        <div class="premium pay">$6.61</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$697.39</strong> 아래 또는 <strong>$711.61</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706</div>
+          <div class="strike-sub">이론가격 $5.85  최저가 $3.42</div>
+        </div>
+        <div class="premium pay">$5.99</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$699.01</strong> 아래 또는 <strong>$711.99</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707</div>
+          <div class="strike-sub">이론가격 $5.26  최저가 $2.94</div>
+        </div>
+        <div class="premium pay">$5.34</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$700.66</strong> 아래 또는 <strong>$712.34</strong> 위면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708</div>
+          <div class="strike-sub">이론가격 $4.75  최저가 $2.59</div>
+        </div>
+        <div class="premium pay">$4.84</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$702.16</strong> 아래 또는 <strong>$712.84</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709</div>
+          <div class="strike-sub">이론가격 $4.35  최저가 $2.35</div>
+        </div>
+        <div class="premium pay">$4.44</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.56</strong> 아래 또는 <strong>$713.44</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710</div>
+          <div class="strike-sub">이론가격 $4.08  최저가 $2.03</div>
+        </div>
+        <div class="premium pay">$4.17</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.83</strong> 아래 또는 <strong>$714.17</strong> 위면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711</div>
+          <div class="strike-sub">이론가격 $3.95  최저가 $2.19</div>
+        </div>
+        <div class="premium pay">$4.04</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.96</strong> 아래 또는 <strong>$715.04</strong> 위면 수익</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="short-iron-condor">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">숏 아이언 콘도르</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (롱 풋 / 숏 풋 / 숏 콜 / 롱 콜)</span>
+    <span>받을 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$697 / $698 / $699 / $700</div>
+          <div class="strike-sub">이론가격 $0.95  최저가 $0.80</div>
+        </div>
+        <div class="premium anom">$1.15</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704 / $705 / $706</div>
+          <div class="strike-sub">이론가격 $0.93  최저가 $0.19</div>
+        </div>
+        <div class="premium">$0.65</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.35 ~ $705.65</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705 / $706 / $707</div>
+          <div class="strike-sub">이론가격 $0.93  최저가 $0.64</div>
+        </div>
+        <div class="premium">$0.76</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.24 ~ $706.76</strong> 사이면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706 / $707 / $708</div>
+          <div class="strike-sub">이론가격 $0.92  최저가 $0.58</div>
+        </div>
+        <div class="premium">$0.75</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.25 ~ $707.75</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707 / $708 / $709</div>
+          <div class="strike-sub">이론가격 $0.89  최저가 $0.46</div>
+        </div>
+        <div class="premium">$0.73</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.27 ~ $708.73</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708 / $709 / $710</div>
+          <div class="strike-sub">이론가격 $0.88  최저가 $0.66</div>
+        </div>
+        <div class="premium">$0.69</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.31 ~ $709.69</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709 / $710 / $711</div>
+          <div class="strike-sub">이론가격 $0.86  최저가 $0.25</div>
+        </div>
+        <div class="premium">$0.68</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$708.32 ~ $710.68</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710 / $711 / $712</div>
+          <div class="strike-sub">이론가격 $0.84  최저가 $0.42</div>
+        </div>
+        <div class="premium">$0.65</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$709.35 ~ $711.65</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711 / $712 / $713</div>
+          <div class="strike-sub">이론가격 $0.84  최저가 $0.43</div>
+        </div>
+        <div class="premium">$0.65</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.35 ~ $712.65</strong> 사이면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$714 / $715 / $716 / $717</div>
+          <div class="strike-sub">이론가격 $0.00  최저가 $0.00</div>
+        </div>
+        <div class="premium anom">-$0.05</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="long-iron-condor">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 아이언 콘도르</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (숏 풋 / 롱 풋 / 롱 콜 / 숏 콜)</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$697 / $698 / $699 / $700</div>
+          <div class="strike-sub">이론가격 $0.06  최저가 $0.02</div>
+        </div>
+        <div class="premium pay">$0.08</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$697.92</strong> 아래 또는 <strong>$699.08</strong> 위면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704 / $705 / $706</div>
+          <div class="strike-sub">이론가격 $0.92  최저가 $0.19</div>
+        </div>
+        <div class="premium anom">$1.12</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705 / $706 / $707</div>
+          <div class="strike-sub">이론가격 $0.93  최저가 $0.64</div>
+        </div>
+        <div class="premium anom">$1.15</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706 / $707 / $708</div>
+          <div class="strike-sub">이론가격 $0.91  최저가 $0.58</div>
+        </div>
+        <div class="premium anom">$1.08</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707 / $708 / $709</div>
+          <div class="strike-sub">이론가격 $0.89  최저가 $0.46</div>
+        </div>
+        <div class="premium anom">$1.07</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708 / $709 / $710</div>
+          <div class="strike-sub">이론가격 $0.88  최저가 $0.66</div>
+        </div>
+        <div class="premium anom">$1.05</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709 / $710 / $711</div>
+          <div class="strike-sub">이론가격 $0.86  최저가 $0.25</div>
+        </div>
+        <div class="premium anom">$1.05</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710 / $711 / $712</div>
+          <div class="strike-sub">이론가격 $0.85  최저가 $0.42</div>
+        </div>
+        <div class="premium anom">$1.03</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711 / $712 / $713</div>
+          <div class="strike-sub">이론가격 $0.84  최저가 $0.43</div>
+        </div>
+        <div class="premium anom">$1.01</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$714 / $715 / $716 / $717</div>
+          <div class="strike-sub">이론가격 $1.00  최저가 $0.90</div>
+        </div>
+        <div class="premium anom">$1.20</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="short-iron-butterfly">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">숏 아이언 버터플라이</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (롱 풋 / 숏 풋 / 숏 콜 / 롱 콜)</span>
+    <span>받을 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$697 / $698 / $698 / $699</div>
+          <div class="strike-sub">이론가격 $0.90  최저가 $0.50</div>
+        </div>
+        <div class="premium anom">$1.10</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704 / $704 / $705</div>
+          <div class="strike-sub">이론가격 $0.97  최저가 $1.52</div>
+        </div>
+        <div class="premium">$0.74</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$703.26 ~ $704.74</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705 / $705 / $706</div>
+          <div class="strike-sub">이론가격 $0.96  최저가 $0.13</div>
+        </div>
+        <div class="premium">$0.69</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$704.31 ~ $705.69</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706 / $706 / $707</div>
+          <div class="strike-sub">이론가격 $0.97  최저가 $0.74</div>
+        </div>
+        <div class="premium">$0.79</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$705.21 ~ $706.79</strong> 사이면 수익</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707 / $707 / $708</div>
+          <div class="strike-sub">이론가격 $0.95  최저가 $0.55</div>
+        </div>
+        <div class="premium">$0.78</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$706.22 ~ $707.78</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708 / $708 / $709</div>
+          <div class="strike-sub">이론가격 $0.94  최저가 $0.48</div>
+        </div>
+        <div class="premium">$0.76</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$707.24 ~ $708.76</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709 / $709 / $710</div>
+          <div class="strike-sub">이론가격 $0.94  최저가 $0.76</div>
+        </div>
+        <div class="premium">$0.75</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$708.25 ~ $709.75</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710 / $710 / $711</div>
+          <div class="strike-sub">이론가격 $0.93  최저가 $0.22</div>
+        </div>
+        <div class="premium">$0.73</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$709.27 ~ $710.73</strong> 사이면 수익</div>
+    </div>
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711 / $711 / $712</div>
+          <div class="strike-sub">이론가격 $0.91  최저가 $0.46</div>
+        </div>
+        <div class="premium">$0.72</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$710.28 ~ $711.72</strong> 사이면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$715 / $716 / $716 / $717</div>
+          <div class="strike-sub">이론가격 $0.00  최저가 $0.00</div>
+        </div>
+        <div class="premium anom">-$0.02</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="screen strategy-view" data-view="long-iron-butterfly">
+  <div class="header">
+    <div class="left">
+      <span class="back">←</span>
+      <span class="symbol">XSP <span class="symbol-sub">Mini S&P 500 Index</span></span>
+    </div>
+    <span class="setting">│ 설정</span>
+  </div>
+  <div class="title-block">
+    <div class="title-row">
+      <span class="title">롱 아이언 버터플라이</span>
+      <span class="title-help">?</span>
+    </div>
+    <div class="title-desc">
+      각 행사가의 만기 손익분기 가격을 확인하고,<br>
+      주가 전망에 맞는 행사가를 선택하세요.
+    </div>
+  </div>
+  <div class="expiry-tabs">
+    <div class="expiry-tab active"><span class="date">4월 22일</span><span class="sub">0일 후 만료</span></div>
+    <div class="expiry-tab"><span class="date">4월 23일</span><span class="sub">1일</span></div>
+    <div class="expiry-tab"><span class="date">4월 24일</span><span class="sub">2일</span></div>
+    <div class="expiry-tab"><span class="date">4월 27일</span><span class="sub">5일</span></div>
+  </div>
+  <div class="col-header">
+    <span>행사가 (숏 풋 / 롱 풋 / 롱 콜 / 숏 콜)</span>
+    <span>지불 프리미엄</span>
+  </div>
+  <div class="chain">
+    <div class="row neutral">
+      <div class="row-top">
+        <div>
+          <div class="strike">$697 / $698 / $698 / $699</div>
+          <div class="strike-sub">이론가격 $0.04  최저가 $0.01</div>
+        </div>
+        <div class="premium pay">$0.05</div>
+      </div>
+      <div class="bep-line">만기 주가 <strong>$697.95</strong> 아래 또는 <strong>$698.05</strong> 위면 수익</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$703 / $704 / $704 / $705</div>
+          <div class="strike-sub">이론가격 $0.96  최저가 $1.52</div>
+        </div>
+        <div class="premium anom">$1.20</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$704 / $705 / $705 / $706</div>
+          <div class="strike-sub">이론가격 $0.96  최저가 $0.13</div>
+        </div>
+        <div class="premium anom">$1.15</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$705 / $706 / $706 / $707</div>
+          <div class="strike-sub">이론가격 $0.97  최저가 $0.74</div>
+        </div>
+        <div class="premium anom">$1.19</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+
+    <div class="current-price">
+      <div class="divider-strip">
+        <div class="current-price-pill">현재가 $706.40</div>
+      </div>
+    </div>
+
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$706 / $707 / $707 / $708</div>
+          <div class="strike-sub">이론가격 $0.94  최저가 $0.55</div>
+        </div>
+        <div class="premium anom">$1.13</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$707 / $708 / $708 / $709</div>
+          <div class="strike-sub">이론가격 $0.95  최저가 $0.48</div>
+        </div>
+        <div class="premium anom">$1.13</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$708 / $709 / $709 / $710</div>
+          <div class="strike-sub">이론가격 $0.93  최저가 $0.76</div>
+        </div>
+        <div class="premium anom">$1.12</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$709 / $710 / $710 / $711</div>
+          <div class="strike-sub">이론가격 $0.93  최저가 $0.22</div>
+        </div>
+        <div class="premium anom">$1.11</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$710 / $711 / $711 / $712</div>
+          <div class="strike-sub">이론가격 $0.92  최저가 $0.46</div>
+        </div>
+        <div class="premium anom">$1.11</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+    <div class="row anomaly">
+      <div class="row-top">
+        <div>
+          <div class="strike">$715 / $716 / $716 / $717</div>
+          <div class="strike-sub">이론가격 $1.00  최저가 $0.90</div>
+        </div>
+        <div class="premium anom">$1.25</div>
+      </div>
+      <div class="bep-line anom-msg">⚠️ 이상 가격 · 손익 계산 불가 · 진입 비권장</div>
+    </div>
+  </div>
+</div>
+
 
 <script>
-  const MEMBERS = ["김억수", "최용호", "문창오", "홍승택", "성병준", "임주찬"];
-  const STORAGE_KEY = "team-dashboard-v1";
-
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    const initial = {};
-    MEMBERS.forEach(name => { initial[name] = []; });
-    return initial;
-  }
-
-  function saveState(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-
-  let state = loadState();
-
-  function render() {
-    const grid = document.getElementById("grid");
-    grid.innerHTML = "";
-    MEMBERS.forEach(name => {
-      const tasks = state[name] || [];
-      const done = tasks.filter(t => t.done).length;
-      const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="name">${name}</div>
-          <div class="progress">
-            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-            <div class="progress-text">${pct}%</div>
-          </div>
-        </div>
-        <div class="tasks"></div>
-        <form class="add-task">
-          <input type="text" placeholder="새 태스크 추가" maxlength="100" />
-          <button type="submit">추가</button>
-        </form>
-      `;
-
-      const tasksEl = card.querySelector(".tasks");
-      tasks.forEach((task, idx) => {
-        const taskEl = document.createElement("div");
-        taskEl.className = "task";
-        taskEl.innerHTML = `
-          <input type="checkbox" ${task.done ? "checked" : ""} />
-          <input type="text" class="task-text ${task.done ? "done" : ""}" value="${escapeHtml(task.text)}" />
-          <button class="delete" title="삭제">×</button>
-        `;
-        const [checkbox, textInput, deleteBtn] = taskEl.children;
-        checkbox.addEventListener("change", () => {
-          state[name][idx].done = checkbox.checked;
-          saveState(state);
-          render();
-        });
-        textInput.addEventListener("change", () => {
-          state[name][idx].text = textInput.value;
-          saveState(state);
-        });
-        deleteBtn.addEventListener("click", () => {
-          state[name].splice(idx, 1);
-          saveState(state);
-          render();
-        });
-        tasksEl.appendChild(taskEl);
+  const chips = document.querySelectorAll('.strategy-chip');
+  const views = document.querySelectorAll('.strategy-view');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const id = chip.dataset.id;
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      views.forEach(v => {
+        if (v.dataset.view === id) v.classList.add('active');
+        else v.classList.remove('active');
       });
-
-      const form = card.querySelector(".add-task");
-      form.addEventListener("submit", e => {
-        e.preventDefault();
-        const input = form.querySelector("input");
-        const text = input.value.trim();
-        if (!text) return;
-        state[name].push({ text, done: false });
-        saveState(state);
-        render();
-      });
-
-      grid.appendChild(card);
+      window.scrollTo(0, 0);
     });
-  }
-
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    }[c]));
-  }
-
-  render();
+  });
 </script>
+
 </body>
 </html>
